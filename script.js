@@ -19,6 +19,7 @@ const createGallery = (data) => {
     const img = document.createElement("img");
     img.src = url;
     galleryItem.appendChild(img);
+    
 
     responses.forEach((response, index) => {
       const responseDiv = document.createElement("div");
@@ -39,8 +40,54 @@ const createGallery = (data) => {
     gallery.appendChild(galleryItem);
   }
 };
-// Fetch data from the JSON file
+
+// Function to convert data to CSV format
+const convertToCSV = (objArray) => {
+  const array = typeof objArray !== "object" ? JSON.parse(objArray) : objArray;
+  let str = "";
+  let row = "";
+
+  // Extract the headers
+  for (const index in array[0]) {
+    if (row !== "") row += ",";
+    row += index;
+  }
+  str += row + "\r\n";
+
+  // Extract the data rows
+  for (let i = 0; i < array.length; i++) {
+    let line = "";
+    for (const index in array[i]) {
+      if (line !== "") line += ",";
+      line += array[i][index];
+    }
+    str += line + "\r\n";
+  }
+  return str;
+};
+
+// Function to download the CSV file
+const downloadCSV = (csv, filename) => {
+  const csvFile = new Blob([csv], { type: "text/csv" });
+  const downloadLink = document.createElement("a");
+  downloadLink.download = filename;
+  downloadLink.href = window.URL.createObjectURL(csvFile);
+  downloadLink.style.display = "none";
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+};
+
+// Fetch data from the JSON file and create the gallery
 fetch("result1.json")
   .then((response) => response.json())
-  .then((data) => createGallery(data))
+  .then((data) => {
+    createGallery(data);
+
+    // Set up CSV download button
+    const downloadButton = document.getElementById("downloadCsv");
+    downloadButton.addEventListener("click", () => {
+      const csvData = convertToCSV(data);
+      downloadCSV(csvData, "data.csv");
+    });
+  })
   .catch((error) => console.error("Error fetching data:", error));
